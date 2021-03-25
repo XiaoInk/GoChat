@@ -69,7 +69,7 @@ func (c *Client) Menu() bool {
 	case 2: // 私聊模式
 		c.PrivateChat()
 	case 3: // 修改用户名
-		fmt.Println("修改用户名")
+		c.Rename()
 	case 0: // 退出
 		return true
 	}
@@ -108,6 +108,12 @@ func (c *Client) PrivateChat() {
 
 		c.SendMsg("?to:" + toUser + ":" + c.chatMsg) // 向给定用户发送消息
 	}
+}
+
+func (c *Client) Rename() {
+	fmt.Println(">>> 请输入新用户名，输入 ?exit 返回上一级")
+	_, _ = fmt.Scanln(&c.name)
+	c.SendMsg("?rename:" + c.name)
 }
 
 func (c *Client) SendMsg(msg string) {
