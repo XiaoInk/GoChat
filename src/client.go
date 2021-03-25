@@ -7,15 +7,18 @@ package src
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"os"
 )
 
 type Client struct {
 	ServerIp   string
 	ServerPort int
-	Name       string
-	Flag       int
+	name       string
+	flag       int
+	chatMsg    string
 	conn       net.Conn
 }
 
@@ -23,7 +26,7 @@ func NewClient(ServerIp string, ServerPort int) *Client {
 	return &Client{
 		ServerIp:   ServerIp,
 		ServerPort: ServerPort,
-		Flag:       -1,
+		flag:       -1,
 	}
 }
 
@@ -32,13 +35,19 @@ func (c *Client) Run() {
 	if err != nil {
 		log.Println("net.Dial err: ", err)
 	}
+	c.conn = conn
 	defer conn.Close()
 
 	log.Println("服务器连接成功")
 
+	// 监听服务器发送的消息
+	go func() {
+		_, _ = io.Copy(os.Stdout, c.conn)
+	}()
+
 	// 打印菜单
 	for {
-		if c.Flag != 0 {
+		if c.flag != 0 {
 			if c.Menu() {
 				break
 			}
@@ -47,16 +56,16 @@ func (c *Client) Run() {
 }
 
 func (c *Client) Menu() bool {
-	fmt.Println("1. 群聊模式")
-	fmt.Println("2. 私聊模式")
-	fmt.Println("3. 修改用户名")
-	fmt.Println("0. 退出")
+	fmt.Println(">>> 1. 公聊模式")
+	fmt.Println(">>> 2. 私聊模式")
+	fmt.Println(">>> 3. 修改用户名")
+	fmt.Println(">>> 0. 退出")
 
-	_, _ = fmt.Scanln(&c.Flag)
+	_, _ = fmt.Scanln(&c.flag)
 
-	switch c.Flag {
+	switch c.flag {
 	case 1: // 群聊模式
-		fmt.Println("群聊模式")
+		c.PublicChat()
 	case 2: // 私聊模式
 		fmt.Println("私聊模式")
 	case 3: // 修改用户名
@@ -65,4 +74,20 @@ func (c *Client) Menu() bool {
 		return true
 	}
 	return false
+}
+
+func (c *Client) PublicChat() {
+	fmt.Println(">>> 您已进入公聊模式，输入 ?exit 退出公聊模式")
+	for {
+		_, _ = fmt.Scanln(&c.chatMsg)
+		if c.chatMsg == "?exit" {
+			break
+		}
+
+		c.SendMsg(c.chatMsg) // 向服务器发送消息
+	}
+}
+
+func (c *Client) SendMsg(msg string) {
+	_, _ = c.conn.Write([]byte(msg + "\n"))
 }
