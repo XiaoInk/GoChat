@@ -9,17 +9,23 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 )
 
 type Server struct {
-	Ip   string
-	Port int
+	Ip        string
+	Port      int
+	Message   chan string      // 广播消息
+	OnlineMap map[string]*User // 在线用户
+	mapLock   sync.RWMutex
 }
 
 func NewServer(ip string, port int) *Server {
 	return &Server{
-		ip,
-		port,
+		Ip:        ip,
+		Port:      port,
+		Message:   make(chan string),
+		OnlineMap: make(map[string]*User),
 	}
 }
 
@@ -29,6 +35,18 @@ func (s *Server) Start() {
 		log.Println("net.Listen err: ", err)
 	}
 	defer listener.Close()
+
+	// 监听广播消息
+	go func() {
+		for {
+			msg := <-s.Message
+			s.mapLock.Lock()
+			for _, user := range s.OnlineMap {
+				user.C <- msg
+			}
+			s.mapLock.Unlock()
+		}
+	}()
 
 	// 监听客户端连接请求
 	for {
@@ -43,6 +61,15 @@ func (s *Server) Start() {
 	}
 }
 
+// 业务处理
 func (s *Server) Handler(conn net.Conn) {
 	log.Println("客户端连接成功...")
+
+	user := NewUser(conn, s)
+	user.Online()
+}
+
+// 消息广播
+func (s *Server) Broadcast(user *User, msg string) {
+	s.Message <- "[" + user.Addr + "]" + user.Name + ": " + msg
 }
