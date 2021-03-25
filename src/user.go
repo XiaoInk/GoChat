@@ -7,6 +7,7 @@ package src
 
 import (
 	"net"
+	"strings"
 )
 
 type User struct {
@@ -63,6 +64,20 @@ func (u *User) DoMessage(msg string) {
 			u.SendMsg("[" + user.Addr + "]" + user.Name + ": 在线")
 		}
 		u.server.mapLock.Unlock()
+	} else if strings.HasPrefix(msg, "?rename:") { // 修改用户名
+		newName := strings.Split(msg, ":")[1]
+		_, ok := u.server.OnlineMap[newName]
+		if ok {
+			u.SendMsg("该用户名已被占用")
+		} else {
+			u.server.mapLock.Lock()
+			delete(u.server.OnlineMap, u.Name)
+			u.server.OnlineMap[newName] = u
+			u.server.mapLock.Unlock()
+
+			u.Name = newName
+			u.SendMsg("您的用户名已修改成功")
+		}
 	} else {
 		u.server.Broadcast(u, msg)
 	}
