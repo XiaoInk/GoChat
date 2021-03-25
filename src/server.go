@@ -98,7 +98,7 @@ func (s *Server) Handler(conn net.Conn) {
 	for {
 		select {
 		case <-isActive:
-		case <-time.After(10 * time.Second):
+		case <-time.After(300 * time.Second):
 			user.SendMsg("连接超时退出.")
 			close(user.C)
 			_ = conn.Close()
