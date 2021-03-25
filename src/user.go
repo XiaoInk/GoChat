@@ -57,7 +57,7 @@ func (u *User) Offline() {
 }
 
 func (u *User) DoMessage(msg string) {
-	if msg == "?who" { // 查询在线用户
+	if msg == "?who" { // 查询在线用户列表
 		u.server.mapLock.Lock()
 		for _, user := range u.server.OnlineMap {
 			u.SendMsg("[" + user.Addr + "]" + user.Name + ": 在线")
