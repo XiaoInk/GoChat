@@ -85,7 +85,7 @@ func (s *Server) Handler(conn net.Conn) {
 			}
 
 			// 处理用户输入
-			user.DoMessage(string(buf[:n-1])) // buf[:n-1] 去除尾部空格
+			user.DoMessage(string(buf[:n-1])) // buf[:n-1] 去除尾部换行符
 		}
 	}()
 }

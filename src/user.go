@@ -78,6 +78,18 @@ func (u *User) DoMessage(msg string) {
 			u.Name = newName
 			u.SendMsg("您的用户名已修改成功")
 		}
+	} else if strings.HasPrefix(msg, "?to:") { // 私聊
+		toUserName, toUserMsg := strings.Split(msg, ":")[1], strings.Split(msg, ":")[2]
+		toUser, ok := u.server.OnlineMap[toUserName]
+		if ok {
+			if len(strings.TrimSpace(toUserMsg)) > 0 {
+				toUser.SendMsg("<From " + toUser.Name + "> " + toUserMsg)
+				return
+			}
+			u.SendMsg("消息体不能为空，请输入: \"?to:Name:Content\"")
+		} else {
+			u.SendMsg("未知的用户名或用户不在线")
+		}
 	} else {
 		u.server.Broadcast(u, msg)
 	}
