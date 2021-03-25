@@ -11,6 +11,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -69,6 +70,8 @@ func (s *Server) Handler(conn net.Conn) {
 	user := NewUser(conn, s)
 	user.Online()
 
+	isActive := make(chan bool)
+
 	// 监听用户输入
 	go func() {
 		buf := make([]byte, 4096)
@@ -86,8 +89,22 @@ func (s *Server) Handler(conn net.Conn) {
 
 			// 处理用户输入
 			user.DoMessage(string(buf[:n-1])) // buf[:n-1] 去除尾部换行符
+
+			isActive <- true
 		}
 	}()
+
+	// 超时强制关闭
+	for {
+		select {
+		case <-isActive:
+		case <-time.After(10 * time.Second):
+			user.SendMsg("连接超时退出.")
+			close(user.C)
+			_ = conn.Close()
+			return
+		}
+	}
 }
 
 // 消息广播
