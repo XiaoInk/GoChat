@@ -7,6 +7,7 @@ package src
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"sync"
@@ -67,6 +68,26 @@ func (s *Server) Handler(conn net.Conn) {
 
 	user := NewUser(conn, s)
 	user.Online()
+
+	// 监听用户输入
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, err := conn.Read(buf)
+			if n == 0 {
+				user.Offline()
+				return
+			}
+
+			if err != nil && err != io.EOF {
+				log.Println("conn.Read err: ", err)
+				return
+			}
+
+			// 处理用户输入
+			user.DoMessage(string(buf[:n-1])) // buf[:n-1] 去除尾部空格
+		}
+	}()
 }
 
 // 消息广播

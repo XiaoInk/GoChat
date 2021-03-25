@@ -55,3 +55,7 @@ func (u *User) Offline() {
 
 	u.server.Broadcast(u, "已下线.")
 }
+
+func (u *User) DoMessage(msg string) {
+	u.server.Broadcast(u, msg)
+}
